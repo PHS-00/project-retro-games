@@ -6,6 +6,7 @@ class AppActionChip extends StatelessWidget {
   final IconData icon;
   final String? url;
   final VoidCallback? onTap;
+  final Color? backgroundColor;
 
   const AppActionChip({
     super.key,
@@ -13,39 +14,42 @@ class AppActionChip extends StatelessWidget {
     required this.icon,
     this.url,
     this.onTap,
+    this.backgroundColor,
   });
 
-  Future<void> abrirLink() async {
-    if (url == null) return;
+  Future<void> _handleTap() async {
+    onTap?.call();
 
-    final uri = Uri.parse(url!);
+    if (url == null || url!.isEmpty) return;
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-    }
+    await launchUrl(
+      Uri.parse(url!),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () async {
-        onTap?.call();
+    final colors = Theme.of(context).colorScheme;
 
-        if (url != null) {
-          await abrirLink();
-        }
-      },
-      child: Chip(
-        avatar: Icon(
-          icon,
-          size: 18,
-        ),
-        label: Text(label),
+    return ActionChip(
+      backgroundColor: backgroundColor ?? colors.surface,
+      side: BorderSide(
+        color: colors.outline,
       ),
+      avatar: Icon(
+        icon,
+        size: 18,
+        color: colors.onSurface,
+      ),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: colors.onSurface,
+        ),
+      ),
+      pressElevation: 10,
+      onPressed: _handleTap,
     );
   }
 }

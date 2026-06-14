@@ -25,7 +25,8 @@ class AppFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 700;
+    final colors = Theme.of(context).colorScheme;
+    final isSmall = MediaQuery.sizeOf(context).width < 600;
 
     return ClipRect(
       child: BackdropFilter(
@@ -35,71 +36,51 @@ class AppFooter extends StatelessWidget {
         ),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            vertical: 30,
-            horizontal: 20,
-          ),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.35),
+            color: colors.surface.withOpacity(.35),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withOpacity(0.15),
+                color: colors.outline.withOpacity(.3),
               ),
             ),
           ),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 800,
-              ),
+              constraints: const BoxConstraints(maxWidth: 800),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.sports_esports,
-                    size: isMobile ? 35 : 45,
-                    color: Colors.white,
+                    size: isSmall ? 35 : 45,
+                    color: colors.onSurface,
                   ),
-
-                  const SizedBox(height: 15),
-
+                  const SizedBox(height: 16),
                   Text(
                     appName,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isMobile ? 20 : 24,
+                      fontSize: isSmall ? 20 : 24,
                       fontWeight: FontWeight.bold,
+                      color: colors.onSurface,
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
+                  const SizedBox(height: 8),
                   Text(
                     description,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
+                    style: TextStyle(
+                      color: colors.onSurface.withOpacity(0.7),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: 300,
-                    child: Divider(
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-
-                  // TECNOLOGIAS
+                  Divider(color: colors.onSurface),
                   if (technologyChips.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
-                      "Tecnologias",
+                      'Tecnologias',
                       style: TextStyle(
-                        color: Colors.grey.shade300,
+                        color: colors.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -111,57 +92,42 @@ class AppFooter extends StatelessWidget {
                       children: technologyChips,
                     ),
                   ],
-
-                  // DESENVOLVEDORES
                   if (developerChips.isNotEmpty) ...[
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 20),
                     Text(
-                      "Desenvolvedores",
+                      'Desenvolvedores',
                       style: TextStyle(
-                        color: Colors.grey.shade300,
+                        color: colors.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: developerChips
-                          .map(
-                            (chip) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: chip,
-                            ),
-                          )
-                          .toList(),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: developerChips,
                     ),
                   ],
-
-                  const SizedBox(height: 25),
-
+                  const SizedBox(height: 24),
                   Text(
-                    "Versão $version",
-                    style: const TextStyle(
-                      color: Colors.white54,
+                    'Versão $version',
+                    style: TextStyle(
+                      color: colors.onSurface.withOpacity(0.6),
                     ),
                   ),
-
-                  const SizedBox(height: 5),
-
                   Text(
-                    "© $year - Projeto Acadêmico",
+                    '© $year - Projeto Acadêmico',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white54,
+                    style: TextStyle(
+                      color: colors.onSurface.withOpacity(0.6),
                     ),
                   ),
-
-                  const SizedBox(height: 5),
-
                   Text(
-                    "Dados fornecidos pela API $apiName",
+                    'Dados fornecidos pela API $apiName',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white54,
+                    style: TextStyle(
+                      color: colors.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],

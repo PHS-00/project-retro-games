@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'view/home_page.dart';
-// import 'view/catalog_page.dart';
+import 'view/catalog_page.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -12,12 +12,35 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'RetroVault',
-      debugShowCheckedModeBanner: false,
+      title: 'App-name',
+      debugShowCheckedModeBanner: true,
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
-        primarySwatch: Colors.deepPurple,
-        scaffoldBackgroundColor: Colors.grey[900],
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.purple,
+          secondary: Colors.green,
+          surface: Colors.black,
+          outline: Colors.grey,
+          onSurface: Colors.white,
+          error: Colors.red,
+          onError: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.grey,
+        // appBarTheme: const AppBarTheme(
+        //   backgroundColor: Colors.black,
+        //   foregroundColor: Colors.white,
+        //   elevation: 0,
+        //   centerTitle: true,
+        // ),
+        // cardTheme: const CardThemeData(
+        //   color: Colors.black87,
+        // ),
+        // inputDecorationTheme: InputDecorationTheme(
+        //   border: OutlineInputBorder(
+        //     borderRadius: BorderRadius.circular(12),
+        //   ),
+        // ),
       ),
       initialRoute: '/',
       getPages: [
@@ -25,10 +48,10 @@ class MyApp extends StatelessWidget {
           name: '/',
           page: () => const HomePage(),
         ),
-        // GetPage(
-        //   name: '/catalogo',
-        //   page: () => const CatalogPage(),
-        // ),
+        GetPage(
+          name: '/catalogo',
+          page: () => CatalogPage(),
+        ),
       ],
     );
   }

@@ -11,117 +11,121 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tema atual da aplicação.
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: const AppNavigationBar(
+      appBar: AppNavigationBar(
         pageName: "Home",
+        showLogo: true,
       ),
-      floatingActionButton: AppFloatingButton(
-        label: "Catálogo",
-        icon: Icons.sports_esports,
-        onPressed: () {
-          Get.toNamed('/catalogo');
-        },
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          AppFloatingButton(
+            icon: Icons.favorite,
+            label: 'Favoritos',
+            onPressed: () {},
+          ),
+          const SizedBox(height: 10),
+          AppFloatingButton(
+            icon: Icons.library_books,
+            label: 'Catálogo',
+            onPressed: () {
+              Get.toNamed('/catalogo');
+            },
+          ),
+        ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Imagem de fundo
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/thumb-1920-1364875.png',
-              fit: BoxFit.cover,
-            ),
+          Image.asset(
+            'assets/images/thumb-1920-1364875.png',
+            fit: BoxFit.cover,
           ),
-
-          // Overlay escuro para melhorar a leitura
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.6),
-            ),
+          Container(
+            color: colors.surface.withOpacity(0.5),
           ),
-
-          // Conteúdo da página
           SingleChildScrollView(
             child: Column(
               children: [
-                // CONTEÚDO PRINCIPAL
-                SizedBox(
-                  width: double.infinity,
-                  child: Padding(
-                    padding: const EdgeInsets.all(30),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 40),
-                        const Icon(
-                          Icons.sports_esports,
-                          size: 100,
-                          color: Colors.white,
+                Container(
+                  padding: const EdgeInsets.all(30),
+                  color: colors.surface.withOpacity(0.5),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 40),
+                      Icon(
+                        Icons.sports_esports,
+                        size: 100,
+                        color: colors.onSurface,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "App-name",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onSurface,
                         ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          "App-name",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        "Explore milhares de jogos retrô utilizando a API REG-Vault.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: colors.onSurface.withOpacity(.8),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 15,
+                        runSpacing: 15,
+                        children: [
+                          AppActionChip(
+                            icon: Icons.videogame_asset,
+                            label: "91.000+ Jogos",
+                            // onTap: () => Get.toNamed('/catalogo'),
                           ),
-                        ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          "Explore milhares de jogos retrô de diversas plataformas utilizando a API REG-Vault.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 18,
+                          const AppActionChip(
+                            icon: Icons.computer,
+                            label: "Múltiplos Sistemas",
                           ),
-                        ),
-                        const SizedBox(height: 40),
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 15,
-                          runSpacing: 15,
-                          children: [
-                            AppActionChip(
-                              icon: Icons.videogame_asset,
-                              label: "91.000+ Jogos",
-                              onTap: () {
-                                Get.toNamed('/catalogo');
-                              },
-                            ),
-                            const AppActionChip(
-                              icon: Icons.computer,
-                              label: "Múltiplos Sistemas",
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 80),
-                      ],
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 80),
+                    ],
                   ),
                 ),
-
-                // FOOTER
                 AppFooter(
                   appName: "App-name",
                   version: "1.0.0",
                   apiName: "REG-Vault",
                   year: "2026",
                   description:
-                      "Catálogo digital de jogos retrô desenvolvido em Flutter para consulta de metadados de milhares de jogos clássicos.",
+                      "Catálogo digital de jogos retrô desenvolvido em Flutter.",
                   technologyChips: [
                     const AppActionChip(
                       icon: Icons.flutter_dash,
                       label: "Flutter",
                       url: "https://flutter.dev",
+                      backgroundColor: Colors.lightBlue,
                     ),
                     const AppActionChip(
                       icon: Icons.storage,
                       label: "REG-Vault",
-                      url: "https://api.regvault.org",
+                      url: "https://regvault.org",
+                      backgroundColor: Colors.purple,
                     ),
                     const AppActionChip(
                       icon: Icons.code,
                       label: "GetX",
+                      backgroundColor: Colors.green,
                     ),
                   ],
                   developerChips: [
@@ -131,7 +135,7 @@ class HomePage extends StatelessWidget {
                     ),
                     const AppActionChip(
                       icon: Icons.person,
-                      label: "Pedro Henrique da Silva",
+                      label: "Pedro",
                     ),
                   ],
                 ),
