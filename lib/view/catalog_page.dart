@@ -2,26 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/data_api_RegVaultService.dart';
+import '../controllers/favorites_controller.dart';
 import '../widgets/app_navigation_bar.dart';
 import '../widgets/app_floating_button.dart';
 import '../widgets/app_game_card.dart';
 
-class CatalogPage extends StatelessWidget {
-  CatalogPage({super.key});
+class CatalogPage extends StatefulWidget {
+  const CatalogPage({super.key});
 
+  @override
+  State<CatalogPage> createState() => _CatalogPageState();
+}
+
+class _CatalogPageState extends State<CatalogPage> {
   final service = regVaultService;
 
-  void _load() {
-    // CORRIGIDO: Só chama a API se a lista global estiver limpa, prevenindo loops infinitos.
+  @override
+  void initState() {
+    super.initState();
+    _carregarDados();
+  }
+
+  @override
+  void dispose() {
+    service.buscar("");
+    super.dispose();
+  }
+
+  Future<void> _carregarDados() async {
     if (service.jogos.isEmpty) {
-      Future.microtask(() => service.carregarJogos());
+      await service.carregarJogos();
+
+      service.jogos.sort((a, b) {
+        int scoreA = (a["has_box_front"] ?? 0) + (a["has_screenshot"] ?? 0);
+        int scoreB = (b["has_box_front"] ?? 0) + (b["has_screenshot"] ?? 0);
+        return scoreB.compareTo(scoreA);
+      });
+
+      service.buscar("");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    _load();
     final colors = Theme.of(context).colorScheme;
+    final favController = Get.find<FavoritesController>();
 
     return Scaffold(
       appBar: const AppNavigationBar(
@@ -35,7 +60,7 @@ class CatalogPage extends StatelessWidget {
           AppFloatingButton(
             icon: Icons.favorite,
             label: 'Favoritos',
-            onPressed: () {},
+            onPressed: () => Get.toNamed('/favoritos'),
           ),
           const SizedBox(height: 35),
         ],
@@ -43,17 +68,14 @@ class CatalogPage extends StatelessWidget {
       body: ValueListenableBuilder(
         valueListenable: service.tableStateNotifier,
         builder: (context, state, _) {
-          // CORRIGIDO: Coletando os objetos fatiados/filtrados da página atual
           final games = state["objects"] as List;
           final currentPage = state["page"] as int;
           final totalPages = state["pages"] as int;
 
-          // Se a lista mestre está vazia e está carregando
           if (games.isEmpty && service.jogos.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Se a busca não retornou nenhum registro
           if (games.isEmpty) {
             return const Center(
               child: Text(
@@ -65,32 +87,24 @@ class CatalogPage extends StatelessWidget {
 
           return Column(
             children: [
-              // Lista de cards dinâmica
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12),
                   itemCount: games.length,
                   itemBuilder: (context, index) {
                     final game = games[index];
-
                     return GameCard(
                       game: game,
-                      onFavorite: () {
-                        print("Favoritou: ${game["title_en"]}");
-                      },
-                      onOpen: () {
-                        Get.toNamed('/detalhe', arguments: game);
-                      },
+                      onFavorite: () => favController.toggleFavorito(game),
+                      onOpen: () => Get.toNamed('/detalhe', arguments: game),
                     );
                   },
                 ),
               ),
-
-              // CORRIGIDO: Adicionado controle visual de paginação integrado ao ValueNotifier
               Container(
                 padding:
                     const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                color: colors.surface.withOpacity(0.2),
+                color: colors.surface.withValues(alpha: 0.2),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

@@ -3,109 +3,117 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RegVaultService {
-  // Lista em memória para guardar todos os jogos retornados pela API
-  List _allGames = [];
+  List _currentGames = [];
   String _searchQuery = "";
+  int _currentPage = 1;
+  int _totalJogos = 0;
+  static const int _limite = 100;
 
-  List get jogos => _allGames;
+  final Map<String, Map<String, dynamic>> _cache = {};
+
+  List get jogos => _currentGames;
   String get currentSearchQuery => _searchQuery;
+  int get totalJogos => _totalJogos;
+  int get currentPage => _currentPage;
+  int get totalPages => (_totalJogos / _limite).ceil();
 
   final ValueNotifier tableStateNotifier = ValueNotifier({
     "objects": [],
     "properties": ["title", "genre", "platform"],
     "columns": ["Título", "Gênero", "Plataforma"],
     "total": 0,
-    "pageSize": 5,
+    "pageSize": _limite,
     "page": 0,
     "pages": 0,
-    "cursor": 0
   });
 
-  Future<void> carregarJogos() async {
+  Future<void> carregarPagina(int pagina) async {
+    print("Carregando página $pagina...");
+
+    final queryParams = {
+      'page': pagina.toString(),
+      'limit': '$_limite',
+      if (_searchQuery.isNotEmpty) 'q': _searchQuery,
+    };
+
     var uri = Uri(
       scheme: 'https',
       host: 'api.regvault.org',
       path: '/api/v1/browse',
-      queryParameters: {'page': '1', 'limit': '1000'},
+      queryParameters: queryParams,
     );
 
     try {
       var jsonString = await http.read(uri);
       var data = jsonDecode(jsonString);
 
-      _allGames = data["games"] ?? [];
+      _totalJogos = data["total"] ?? 0;
+      _currentPage = pagina;
 
-      for (var game in _allGames) {
-        if (game["genre"] is List) {
-          game["genre"] = (game["genre"] as List).join(", ");
-        }
-      }
+      final jogos = (data["games"] ?? []) as List;
+      _currentGames = jogos;
 
-      _atualizarEstadoPaginado(0);
+      print(
+          "Página $pagina carregada — ${jogos.length} jogos | Total: $_totalJogos");
+
+      tableStateNotifier.value = {
+        "objects": _currentGames,
+        "properties": ["title", "genre", "platform"],
+        "columns": ["Título", "Gênero", "Plataforma"],
+        "total": _totalJogos,
+        "pageSize": _limite,
+        "page": _currentPage,
+        "pages": totalPages,
+      };
     } catch (e) {
-      print("Erro ao carregar dados da REG-Vault: $e");
+      print("Erro ao carregar página $pagina: $e");
     }
   }
 
-  // Função para atualizar o termo de busca e resetar a paginação
-  void buscar(String query) {
+  Future<void> carregarJogos() async {
+    _searchQuery = "";
+    _currentPage = 1;
+    await carregarPagina(1);
+  }
+
+  Future<void> buscar(String query) async {
     _searchQuery = query.trim().toLowerCase();
-    _atualizarEstadoPaginado(0);
+    _currentPage = 1;
+    await carregarPagina(1);
   }
 
-  // Função interna responsável por filtrar, fatiar a lista e atualizar o ValueNotifier
-  void _atualizarEstadoPaginado(int newCursor) {
-    // 1. Aplica o filtro baseado na busca (Varre Título, Sistema e Gênero)
-    final filteredGames = _allGames.where((game) {
-      final title = (game["title_en"] ?? "").toString().toLowerCase();
-      final system = (game["system"] ?? "").toString().toLowerCase();
-      final genre = (game["genre"] ?? "").toString().toLowerCase();
-
-      return title.contains(_searchQuery) ||
-          system.contains(_searchQuery) ||
-          genre.contains(_searchQuery);
-    }).toList();
-
-    final int pageSize = tableStateNotifier.value["pageSize"] as int;
-    final total = filteredGames.length;
-
-    if (newCursor < 0) newCursor = 0;
-    if (newCursor >= total && total > 0) return;
-
-    int end = newCursor + pageSize;
-    if (end > total) end = total;
-
-    // Fatiando apenas os itens filtrados
-    List pageObjects = total > 0 ? filteredGames.sublist(newCursor, end) : [];
-
-    tableStateNotifier.value = {
-      "objects": pageObjects,
-      "properties": ["title", "genre", "platform"],
-      "columns": ["Título", "Gênero", "Plataforma"],
-      "total": total,
-      "pageSize": pageSize,
-      "page": total > 0 ? (newCursor ~/ pageSize) + 1 : 0,
-      "pages": (total / pageSize).ceil(),
-      "cursor": newCursor
-    };
+  Future<void> carregarPaginaSeguinte() async {
+    if (_currentPage < totalPages) {
+      await carregarPagina(_currentPage + 1);
+    }
   }
 
-  void carregarPaginaSeguinte() {
-    if (_allGames.isEmpty) return;
-
-    final int pageSize = tableStateNotifier.value["pageSize"] as int;
-    final newCursor = tableStateNotifier.value["cursor"] + pageSize;
-
-    _atualizarEstadoPaginado(newCursor);
+  Future<void> carregarPaginaAnterior() async {
+    if (_currentPage > 1) {
+      await carregarPagina(_currentPage - 1);
+    }
   }
 
-  void carregarPaginaAnterior() {
-    if (_allGames.isEmpty) return;
+  Future<Map<String, dynamic>?> carregarDetalhesJogo(
+      String system, String romHash) async {
+    final key = '$system/$romHash';
+    if (_cache.containsKey(key)) return _cache[key];
 
-    final int pageSize = tableStateNotifier.value["pageSize"] as int;
-    final newCursor = tableStateNotifier.value["cursor"] - pageSize;
+    var uri = Uri(
+      scheme: 'https',
+      host: 'api.regvault.org',
+      path: '/api/v1/game/$system/$romHash',
+    );
 
-    _atualizarEstadoPaginado(newCursor);
+    try {
+      var jsonString = await http.read(uri);
+      final dados = jsonDecode(jsonString) as Map<String, dynamic>;
+      _cache[key] = dados;
+      return dados;
+    } catch (e) {
+      print("Erro ao carregar detalhes $system/$romHash: $e");
+      return null;
+    }
   }
 }
 

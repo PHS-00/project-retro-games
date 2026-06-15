@@ -1,30 +1,38 @@
 import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
+import 'package:get/get.dart';
+import '../controllers/favorites_controller.dart';
+import '../data/data_api_RegVaultService.dart';
 
 class GameCard extends StatelessWidget {
   final Map game;
   final VoidCallback? onFavorite;
   final VoidCallback? onOpen;
+  final bool? isFavorito;
 
   const GameCard({
     super.key,
     required this.game,
     this.onFavorite,
     this.onOpen,
+    this.isFavorito,
   });
 
   @override
   Widget build(BuildContext context) {
-    // final colors = Theme.of(context).colorScheme;
+    final favController = Get.find<FavoritesController>();
 
     final title = game["title_en"] ?? "Sem título";
-    final system = game["system"] ?? "N/A";
+    final system = game["system"]?.toString() ?? "";
     final year = game["year"] ?? "N/A";
     final publisher = game["publisher"] ?? "N/A";
+    final romHash = game["rom_hash"]?.toString() ?? "";
 
     final genres = (game["genre"] is List)
         ? (game["genre"] as List).join(", ")
         : (game["genre"] ?? "Não informado");
+
+    final hasBoxFront =
+        game["has_box_front"] == 1 || game["has_box_front"] == true;
 
     return GestureDetector(
       onTap: onOpen,
@@ -39,12 +47,14 @@ class GameCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // =========================
-              // HEADER
-              // =========================
               Row(
                 children: [
-                  const Icon(Icons.sports_esports, size: 40),
+                  _GameCover(
+                    system: system,
+                    romHash: romHash,
+                    hasBoxFront: hasBoxFront,
+                    size: 60,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -57,47 +67,40 @@ class GameCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  IconButton(
-                    onPressed: onFavorite,
-                    icon: const Icon(
-                      Icons.favorite_border,
-                      color: Colors.redAccent,
-                    ),
-                  ),
+                  Obx(() => IconButton(
+                        onPressed: onFavorite,
+                        icon: Icon(
+                          favController.isFavorito(game)
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: Colors.redAccent,
+                        ),
+                      )),
                 ],
               ),
-
               const SizedBox(height: 12),
-
-              // =========================
-              // INFO
-              // =========================
               Text("Sistema: $system"),
               Text("Ano: $year"),
               Text("Publisher: $publisher"),
               Text("Gêneros: $genres"),
-
               const SizedBox(height: 10),
-
-              // =========================
-              // FEATURES (chips da API)
-              // =========================
               Wrap(
                 spacing: 6,
                 children: [
-                  if (game["has_box_front"] == 1)
-                    const Chip(label: Text("Capa")),
-                  if (game["has_screenshot"] == 1)
+                  if (hasBoxFront) const Chip(label: Text("Capa")),
+                  if (game["has_screenshot"] == 1 ||
+                      game["has_screenshot"] == true)
                     const Chip(label: Text("Screenshot")),
-                  if (game["has_manual"] == 1)
+                  if (game["has_manual"] == 1 || game["has_manual"] == true)
                     const Chip(label: Text("Manual")),
-                  if (game["has_video_lq"] == 1 || game["has_video_hq"] == 1)
+                  if (game["has_video_lq"] == 1 ||
+                      game["has_video_hq"] == 1 ||
+                      game["has_video_lq"] == true ||
+                      game["has_video_hq"] == true)
                     const Chip(label: Text("Vídeo")),
                 ],
               ),
-
               const SizedBox(height: 10),
-
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -108,6 +111,95 @@ class GameCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GameCover extends StatefulWidget {
+  final String system;
+  final String romHash;
+  final bool hasBoxFront;
+  final double size;
+
+  const _GameCover({
+    required this.system,
+    required this.romHash,
+    required this.hasBoxFront,
+    required this.size,
+  });
+
+  @override
+  State<_GameCover> createState() => _GameCoverState();
+}
+
+class _GameCoverState extends State<_GameCover> {
+  String? _imageUrl;
+  bool _erro = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.hasBoxFront &&
+        widget.romHash.isNotEmpty &&
+        widget.system.isNotEmpty) {
+      _carregarUrl();
+    }
+  }
+
+  Future<void> _carregarUrl() async {
+    final dados = await regVaultService.carregarDetalhesJogo(
+      widget.system,
+      widget.romHash,
+    );
+    if (!mounted) return;
+
+    final assets = dados?["assets"] as Map<String, dynamic>?;
+    final path = assets?["box_front"]?.toString();
+
+    if (path != null && path.isNotEmpty) {
+      setState(() => _imageUrl = 'https://api.regvault.org$path');
+    } else {
+      setState(() => _erro = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.hasBoxFront ||
+        widget.romHash.isEmpty ||
+        widget.system.isEmpty ||
+        _erro) {
+      return Icon(Icons.sports_esports, size: widget.size);
+    }
+
+    if (_imageUrl == null) {
+      return SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Image.network(
+        _imageUrl!,
+        width: widget.size,
+        height: widget.size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.sports_esports, size: widget.size),
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        },
       ),
     );
   }

@@ -3,8 +3,14 @@ import 'package:get/get.dart';
 
 import 'view/home_page.dart';
 import 'view/catalog_page.dart';
+import 'view/favorites_page.dart';
+import 'view/game_detail_page.dart'; // novo
+import 'controllers/favorites_controller.dart';
 
-void main() => runApp(const MyApp());
+void main() {
+  Get.put(FavoritesController());
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -26,32 +32,14 @@ class MyApp extends StatelessWidget {
           error: Colors.red,
           onError: Colors.white,
         ),
-        scaffoldBackgroundColor: Colors.grey,
-        // appBarTheme: const AppBarTheme(
-        //   backgroundColor: Colors.black,
-        //   foregroundColor: Colors.white,
-        //   elevation: 0,
-        //   centerTitle: true,
-        // ),
-        // cardTheme: const CardThemeData(
-        //   color: Colors.black87,
-        // ),
-        // inputDecorationTheme: InputDecorationTheme(
-        //   border: OutlineInputBorder(
-        //     borderRadius: BorderRadius.circular(12),
-        //   ),
-        // ),
+        scaffoldBackgroundColor: Colors.black,
       ),
       initialRoute: '/',
       getPages: [
-        GetPage(
-          name: '/',
-          page: () => const HomePage(),
-        ),
-        GetPage(
-          name: '/catalogo',
-          page: () => CatalogPage(),
-        ),
+        GetPage(name: '/', page: () => const HomePage()),
+        GetPage(name: '/catalogo', page: () => const CatalogPage()),
+        GetPage(name: '/favoritos', page: () => const FavoritesPage()),
+        GetPage(name: '/detalhe', page: () => const GameDetailPage()), // novo
       ],
     );
   }
