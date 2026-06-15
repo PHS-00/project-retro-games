@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'App-name',
+      title: 'Retolog',
       debugShowCheckedModeBanner: true,
       theme: ThemeData(
         useMaterial3: true,

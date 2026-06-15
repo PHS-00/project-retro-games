@@ -64,7 +64,7 @@ class HomePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        "App-name",
+                        "Retolog",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 36,
@@ -103,7 +103,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 AppFooter(
-                  appName: "App-name",
+                  appName: "Retolog",
                   version: "1.0.0",
                   apiName: "REG-Vault",
                   year: "2026",
