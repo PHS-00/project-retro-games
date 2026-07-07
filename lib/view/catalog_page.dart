@@ -7,39 +7,21 @@ import '../widgets/app_navigation_bar.dart';
 import '../widgets/app_floating_button.dart';
 import '../widgets/app_game_card.dart';
 
-class CatalogPage extends StatefulWidget {
+/// Tela de Catálogo Geral - Totalmente Stateless alimentada por ValueNotifier da API.
+class CatalogPage extends StatelessWidget {
   const CatalogPage({super.key});
 
-  @override
-  State<CatalogPage> createState() => _CatalogPageState();
-}
-
-class _CatalogPageState extends State<CatalogPage> {
-  final service = regVaultService;
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarDados();
-  }
-
-  @override
-  void dispose() {
-    service.buscar("");
-    super.dispose();
-  }
-
-  Future<void> _carregarDados() async {
-    if (service.jogos.isEmpty) {
-      await service.carregarJogos();
-
-      service.jogos.sort((a, b) {
-        int scoreA = (a["has_box_front"] ?? 0) + (a["has_screenshot"] ?? 0);
-        int scoreB = (b["has_box_front"] ?? 0) + (b["has_screenshot"] ?? 0);
-        return scoreB.compareTo(scoreA);
+  // Método interno simplificado para carregar e ordernar a listagem inicial
+  void _garantirCarregamentoDados() {
+    if (regVaultService.jogos.isEmpty) {
+      regVaultService.carregarJogos().then((_) {
+        regVaultService.jogos.sort((a, b) {
+          int scoreA = (a["has_box_front"] ?? 0) + (a["has_screenshot"] ?? 0);
+          int scoreB = (b["has_box_front"] ?? 0) + (b["has_screenshot"] ?? 0);
+          return scoreB.compareTo(scoreA);
+        });
+        regVaultService.buscar(""); // Atualiza os notifiers anexados
       });
-
-      service.buscar("");
     }
   }
 
@@ -48,31 +30,31 @@ class _CatalogPageState extends State<CatalogPage> {
     final colors = Theme.of(context).colorScheme;
     final favController = Get.find<FavoritesController>();
 
+    // Garante o carregamento dos itens na primeira renderização
+    _garantirCarregamentoDados();
+
     return Scaffold(
       appBar: const AppNavigationBar(
         pageName: "Catálogo",
         showBackButton: true,
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          AppFloatingButton(
-            icon: Icons.favorite,
-            label: 'Favoritos',
-            onPressed: () => Get.toNamed('/favoritos'),
-          ),
-          const SizedBox(height: 35),
-        ],
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(
+            bottom: 35), // Centraliza margens via estrutura nativa
+        child: AppFloatingButton(
+          icon: Icons.favorite,
+          label: 'Favoritos',
+          onPressed: () => Get.toNamed('/favoritos'),
+        ),
       ),
       body: ValueListenableBuilder(
-        valueListenable: service.tableStateNotifier,
+        valueListenable: regVaultService.tableStateNotifier,
         builder: (context, state, _) {
           final games = state["objects"] as List;
           final currentPage = state["page"] as int;
           final totalPages = state["pages"] as int;
 
-          if (games.isEmpty && service.jogos.isEmpty) {
+          if (games.isEmpty && regVaultService.jogos.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -110,7 +92,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   children: [
                     TextButton.icon(
                       onPressed: currentPage > 1
-                          ? service.carregarPaginaAnterior
+                          ? regVaultService.carregarPaginaAnterior
                           : null,
                       icon: const Icon(Icons.arrow_back_ios, size: 16),
                       label: const Text("Anterior"),
@@ -121,7 +103,7 @@ class _CatalogPageState extends State<CatalogPage> {
                     ),
                     TextButton.icon(
                       onPressed: currentPage < totalPages
-                          ? service.carregarPaginaSeguinte
+                          ? regVaultService.carregarPaginaSeguinte
                           : null,
                       icon: const Text("Próxima"),
                       label: const Icon(Icons.arrow_forward_ios, size: 16),

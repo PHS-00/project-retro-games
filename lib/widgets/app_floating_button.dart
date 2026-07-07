@@ -23,7 +23,7 @@ class AppFloatingButton extends StatelessWidget {
       onExit: (_) => isHovering.value = false,
       child: Obx(
         () => FloatingActionButton.extended(
-          heroTag: label, // corrigido — usa o label como tag única
+          heroTag: label,
           onPressed: onPressed,
           backgroundColor: colors.primary,
           foregroundColor: colors.onSurface,

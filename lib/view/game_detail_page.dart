@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/favorites_controller.dart';
-import '../data/data_api_RegVaultService.dart';
 
+/// Modelo isolado para tratamento seguro dos campos do mapa recebido.
 class GameModel {
   final String titulo;
   final String sistema;
@@ -13,6 +13,7 @@ class GameModel {
   final String players;
   final String rating;
   final String generos;
+  final String romHash;
   final bool temCapa;
   final bool temScreenshot;
   final bool temManual;
@@ -28,6 +29,7 @@ class GameModel {
     required this.players,
     required this.rating,
     required this.generos,
+    required this.romHash,
     required this.temCapa,
     required this.temScreenshot,
     required this.temManual,
@@ -52,6 +54,7 @@ class GameModel {
           map["players_max"]?.toString() ?? map["players"]?.toString() ?? "N/A",
       rating: map["rating"] ?? "N/A",
       generos: processarGeneros(map["genre"]),
+      romHash: map["rom_hash"]?.toString() ?? "",
       temCapa: map["has_box_front"] == 1 || map["has_box_front"] == true,
       temScreenshot:
           map["has_screenshot"] == 1 || map["has_screenshot"] == true,
@@ -64,127 +67,29 @@ class GameModel {
   }
 }
 
-class GameDetailPage extends StatefulWidget {
+/// Página de Detalhes do Jogo — 100% Stateless e simplificada.
+class GameDetailPage extends StatelessWidget {
   const GameDetailPage({super.key});
 
   @override
-  State<GameDetailPage> createState() => _GameDetailPageState();
-}
-
-class _GameDetailPageState extends State<GameDetailPage> {
-  final FavoritesController favController = Get.find<FavoritesController>();
-  final Map<String, dynamic> argumentos =
-      (Get.arguments as Map<String, dynamic>?) ?? {};
-
-  Map<String, dynamic>? _dadosCompletos;
-  bool _carregando = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarDetalhes();
-  }
-
-  Future<void> _carregarDetalhes() async {
-    final system = argumentos["system"]?.toString() ?? "";
-    final romHash = argumentos["rom_hash"]?.toString() ?? "";
-
-    if (system.isNotEmpty && romHash.isNotEmpty) {
-      final dados = await regVaultService.carregarDetalhesJogo(system, romHash);
-      setState(() {
-        _dadosCompletos = dados ?? argumentos;
-        _carregando = false;
-      });
-    } else {
-      setState(() {
-        _dadosCompletos = argumentos;
-        _carregando = false;
-      });
-    }
-  }
-
-  String? _coverUrl(Map<String, dynamic> dados) {
-    final assets = dados["assets"] as Map<String, dynamic>?;
-    final path = assets?["box_front"]?.toString();
-    if (path == null || path.isEmpty) return null;
-    return 'https://api.regvault.org$path';
-  }
-
-  List<String> _screenshotUrls(Map<String, dynamic> dados) {
-    final assets = dados["assets"] as Map<String, dynamic>?;
-    final screenshots = assets?["screenshots"] as List?;
-    if (screenshots == null) return [];
-    return screenshots
-        .map((s) => 'https://api.regvault.org${s.toString()}')
-        .toList();
-  }
-
-  Widget _buildBackground(Map<String, dynamic> dados) {
-    final coverUrl = _coverUrl(dados);
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.deepPurple.shade800, Colors.grey.shade900],
-        ),
-      ),
-      child: coverUrl != null
-          ? Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.network(
-                  coverUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Center(
-                    child: Icon(
-                      Icons.sports_esports,
-                      size: 72,
-                      color: Colors.deepPurple.shade200,
-                    ),
-                  ),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.75),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : Center(
-              child: Icon(
-                Icons.sports_esports,
-                size: 72,
-                color: Colors.deepPurple.shade200,
-              ),
-            ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_carregando) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    final FavoritesController favController = Get.find<FavoritesController>();
 
-    final jogo = GameModel.fromMap(_dadosCompletos!);
-    final screenshots = _screenshotUrls(_dadosCompletos!);
+    // Captura dos argumentos repassados na rota de navegação do GetX
+    final Map<String, dynamic> argumentos =
+        (Get.arguments as Map<String, dynamic>?) ?? {};
+    final jogo = GameModel.fromMap(argumentos);
+
+    // Links estáticos montados diretamente em conformidade com o seu padrão de pastas da API
+    final String coverUrl =
+        'https://api.regvault.org/assets/images/${jogo.sistema}/${jogo.romHash}/box_front.png';
+    final String screenshotUrl =
+        'https://api.regvault.org/assets/images/${jogo.sistema}/${jogo.romHash}/screenshot.png';
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
+          // AppBar superior com efeito de colapso integrada à imagem
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
@@ -200,36 +105,75 @@ class _GameDetailPageState extends State<GameDetailPage> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              background: _buildBackground(_dadosCompletos!),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.deepPurple.shade800, Colors.grey.shade900],
+                  ),
+                ),
+                child: (jogo.temCapa && jogo.romHash.isNotEmpty)
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            coverUrl,
+                            fit: BoxFit.cover, // Ajuste de exibição da imagem
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(Icons.broken_image,
+                                    size: 72, color: Colors.white30),
+                              );
+                            },
+                          ),
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.75)
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Center(
+                        child: Icon(Icons.sports_esports,
+                            size: 72, color: Colors.white30)),
+              ),
             ),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new),
               onPressed: () => Get.back(),
             ),
             actions: [
+              // Observável do GetX gerenciando a cor do coração reativamente
               Obx(() {
                 final isFav = favController.isFavorito(argumentos);
                 return IconButton(
                   tooltip: isFav ? "Remover dos favoritos" : "Favoritar",
-                  icon: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder: (child, animation) =>
-                        ScaleTransition(scale: animation, child: child),
-                    child: Icon(
-                      isFav ? Icons.favorite : Icons.favorite_border,
-                      key: ValueKey(isFav),
-                      color: isFav ? Colors.red.shade400 : Colors.white,
-                      size: 28,
-                    ),
+                  icon: Icon(
+                    isFav ? Icons.favorite : Icons.favorite_border,
+                    color: isFav ? Colors.red.shade400 : Colors.white,
+                    size: 28,
                   ),
                   onPressed: () => favController.toggleFavorito(argumentos),
                 );
               }),
             ],
           ),
+
+          // Corpo principal de especificações
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+            child: Container(
+              padding: const EdgeInsets.all(
+                  20), // Padding padronizado no Container estrutural
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -310,8 +254,44 @@ class _GameDetailPageState extends State<GameDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (screenshots.isNotEmpty)
-                    _ScreenshotSection(urls: screenshots),
+
+                  // Bloco simplificado com renderização direta da Screenshot
+                  if (jogo.temScreenshot && jogo.romHash.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.screenshot_monitor,
+                                color: Colors.deepPurple.shade300, size: 20),
+                            const SizedBox(width: 8),
+                            const Text("Screenshots",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 160,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              screenshotUrl,
+                              height: 160,
+                              fit: BoxFit.cover, // Ajuste de tamanho solicitado
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(Icons.broken_image,
+                                      size: 50, color: Colors.grey),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -323,69 +303,7 @@ class _GameDetailPageState extends State<GameDetailPage> {
   }
 }
 
-class _ScreenshotSection extends StatelessWidget {
-  final List<String> urls;
-
-  const _ScreenshotSection({required this.urls});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.screenshot_monitor,
-                color: Colors.deepPurple.shade300, size: 20),
-            const SizedBox(width: 8),
-            const Text(
-              "Screenshots",
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 160,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: urls.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, i) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  urls[i],
-                  height: 160,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      width: 220,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade800,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
+// Sub-widgets auxiliares mantidos estritamente como Stateless internos
 class _MidiaChip extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -402,7 +320,6 @@ class _MidiaChip extends StatelessWidget {
           style: const TextStyle(color: Colors.white70, fontSize: 12)),
       backgroundColor: color.withValues(alpha: 0.2),
       side: BorderSide(color: color.withValues(alpha: 0.5)),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }
@@ -423,8 +340,8 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         side: BorderSide(color: Colors.deepPurple.shade700, width: 1),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: const EdgeInsets.all(16), // Padding unificado via Container
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -432,13 +349,11 @@ class _SectionCard extends StatelessWidget {
               children: [
                 Icon(icon, color: Colors.deepPurple.shade300, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  titulo,
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
+                Text(titulo,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
               ],
             ),
             const SizedBox(height: 14),
@@ -468,8 +383,9 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(
+              vertical: 6), // Container controlando o espaçamento vertical
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'view/home_page.dart';
 import 'view/catalog_page.dart';
 import 'view/favorites_page.dart';
-import 'view/game_detail_page.dart'; // novo
+import 'view/game_detail_page.dart';
 import 'controllers/favorites_controller.dart';
 
 void main() {
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/', page: () => const HomePage()),
         GetPage(name: '/catalogo', page: () => const CatalogPage()),
         GetPage(name: '/favoritos', page: () => const FavoritesPage()),
-        GetPage(name: '/detalhe', page: () => const GameDetailPage()), // novo
+        GetPage(name: '/detalhe', page: () => const GameDetailPage()),
       ],
     );
   }

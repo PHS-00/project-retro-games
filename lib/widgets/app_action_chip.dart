@@ -5,7 +5,6 @@ class AppActionChip extends StatelessWidget {
   final String label;
   final IconData icon;
   final String? url;
-  final VoidCallback? onTap;
   final Color? backgroundColor;
 
   const AppActionChip({
@@ -13,13 +12,10 @@ class AppActionChip extends StatelessWidget {
     required this.label,
     required this.icon,
     this.url,
-    this.onTap,
     this.backgroundColor,
   });
 
   Future<void> _handleTap() async {
-    onTap?.call();
-
     if (url == null || url!.isEmpty) return;
 
     await launchUrl(
@@ -48,7 +44,6 @@ class AppActionChip extends StatelessWidget {
           color: colors.onSurface,
         ),
       ),
-      pressElevation: 10,
       onPressed: _handleTap,
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../data/data_api_RegVaultService.dart';
 import '../controllers/favorites_controller.dart';
 import '../widgets/app_navigation_bar.dart';
 import '../widgets/app_game_card.dart';
@@ -48,7 +49,10 @@ class FavoritesPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: () => Get.toNamed('/catalogo'),
+                  onPressed: () {
+                    Get.toNamed('/catalogo');
+                    regVaultService.carregarJogos();
+                  },
                   icon: const Icon(Icons.sports_esports),
                   label: const Text("Ir ao Catálogo"),
                   style: ElevatedButton.styleFrom(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../data/data_api_RegVaultService.dart';
 import '../widgets/app_navigation_bar.dart';
 import '../widgets/app_floating_button.dart';
 import '../widgets/app_footer.dart';
@@ -26,7 +27,9 @@ class HomePage extends StatelessWidget {
           AppFloatingButton(
             icon: Icons.favorite,
             label: 'Favoritos',
-            onPressed: () {},
+            onPressed: () {
+              Get.toNamed('/favoritos');
+            },
           ),
           const SizedBox(height: 10),
           AppFloatingButton(
@@ -34,6 +37,7 @@ class HomePage extends StatelessWidget {
             label: 'Catálogo',
             onPressed: () {
               Get.toNamed('/catalogo');
+              regVaultService.carregarJogos();
             },
           ),
         ],
